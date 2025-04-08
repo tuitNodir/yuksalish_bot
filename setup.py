@@ -1,5 +1,5 @@
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import logging
 
 # Logging setup
@@ -28,7 +28,7 @@ filial_list = [
 TOKEN = "7723999912:AAE7aGPF6yNKIKLjnupS3cjNEEM_4fITPUc"
 
 # Assalomu alaykum xabari
-def start(update: Update, context: CallbackContext) -> None:
+async def start(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
     welcome_message = (
         "ASSALOMU ALAYKUM, siz 'YUKSALISH maktablari'ning murojaatlar botiga yozmoqdasiz!\n\n"
@@ -39,10 +39,10 @@ def start(update: Update, context: CallbackContext) -> None:
     # Filial ro'yxatini 3 qator qilib ko'rsatish
     formatted_filials = "\n".join(f"{i+1}. {filial_list[i]}" for i in range(len(filial_list)))
     
-    update.message.reply_text(welcome_message + formatted_filials)
+    await update.message.reply_text(welcome_message + formatted_filials)
 
 # Murojaatni olish
-def receive_message(update: Update, context: CallbackContext) -> None:
+async def receive_message(update: Update, context: CallbackContext) -> None:
     user_message = update.message.text
     user_name = update.message.from_user.full_name
     
@@ -52,29 +52,23 @@ def receive_message(update: Update, context: CallbackContext) -> None:
     message += f"Ism: {user_name}\n"
     message += f"Murojaat: {user_message}\n"
 
-    context.bot.send_message(chat_id=admin_group_id, text=message)
+    await context.bot.send_message(chat_id=admin_group_id, text=message)
 
     # Foydalanuvchiga murojaat yuborilganini bildirish
-    update.message.reply_text("Sizning murojaatingiz qabul qilindi. Yaqin orada javob olasiz!")
+    await update.message.reply_text("Sizning murojaatingiz qabul qilindi. Yaqin orada javob olasiz!")
 
 def main() -> None:
-    # Updater va Dispatcher o'rnatish
-    updater = Updater(TOKEN)
+    # Application o'rnatish
+    application = Application.builder().token(TOKEN).build()
     
-    # Botni ishlashga tayyorlash
-    dp = updater.dispatcher
-
     # /start komandasi uchun handler
-    dp.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("start", start))
 
     # Foydalanuvchi yuborgan xabarni qabul qilish
-    dp.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, receive_message))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, receive_message))
 
     # Botni ishga tushirish
-    updater.start_polling()
-
-    # Botni ishlashda davom ettirish
-    updater.idle()
+    application.run_polling()
 
 if __name__ == '__main__':
     main()
