@@ -1,5 +1,5 @@
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext
 import logging
 
 # Logging setup
@@ -68,7 +68,7 @@ def main() -> None:
     dp.add_handler(CommandHandler("start", start))
 
     # Foydalanuvchi yuborgan xabarni qabul qilish
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, receive_message))
+    dp.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, receive_message))
 
     # Botni ishga tushirish
     updater.start_polling()
