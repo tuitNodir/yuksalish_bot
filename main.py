@@ -11,21 +11,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Filiallar ro'yxati
+# Filiallar ro'yxati va adminlar
 branches = [
-    "Yuksalish 1 - Chilonzor",
-    "Yuksalish 2 - Olmazor",
-    "Yuksalish 3 - Sergeli",
-    "Yuksalish 4 - Yunusobod",
-    "Yuksalish 5 - Mirobod",
-    "Yuksalish 6 - Yakkasaroy",
-    "Yuksalish 7 - Uchtepa",
-    "Yuksalish 8 - Shayxontohur",
-    "Yuksalish 9 - Mirzo Ulug'bek",
-    "Yuksalish 10 - Bektemir",
-    "Yuksalish 11 - Yangihayot",
-    "Yuksalish 12 - Yashnobod",
-    "Yuksalish 13 - Toshkent viloyati"
+    {"name": "Toshkent", "contact": "+998951010600", "admin": "@yuksalish_maktab_admin"},
+    {"name": "Ohangaron", "contact": "+998952250600", "admin": "@Yuksalish_gymnasium"},
+    {"name": "Chirchiq", "contact": "+998955070808", "admin": "@Chirchiq_Yuksalish_admin"},
+    {"name": "Olmaliq", "contact": "+998881314114", "admin": "@Yuksalish_olmaliq"},
+    {"name": "Andijon", "contact": "+998771030606", "admin": "@Andijon_Yuksalish_Maktabi"},
+    {"name": "Namangan", "contact": "+998785551212", "admin": "@Nam_yuksalish_admin"},
+    {"name": "Farg’ona", "contact": "+998889414141", "admin": "@fargona_yuksalish_maktabi"},
+    {"name": "Jizzax", "contact": "+998953260600", "admin": "@yuksalish_maktabi_jizzax"},
+    {"name": "Baxmal", "contact": "+998974365551", "admin": "@Yuksalish_maktablari_Baxmal"},
+    {"name": "Samarqand", "contact": "+998915292225", "admin": "@Samarqand_Yuksalish_admin"},
+    {"name": "Kattaqo’rg’on", "contact": "+998904623536", "admin": "@Kattaqorgon_yuksalish_admin1"},
+    {"name": "Navoiy", "contact": "+998884714040", "admin": "@Navoiy_yuksalish_admin"},
+    {"name": "G’ijduvon", "contact": "+998914145995", "admin": "@yuksalish_maktabi_gijduvon"}
 ]
 
 # Har bir user uchun ma'lumotlar
@@ -36,12 +36,24 @@ def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_data[user.id] = {}
 
-    keyboard = [[InlineKeyboardButton(branch, callback_data=branch)] for branch in branches]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
+    # "Assalomu alaykum" xabarini yuborish
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f"Assalomu alaykum, {user.first_name}!\nQuyidagi filiallardan birini tanlang:",
+        text="ASSALOMU ALAYKUM, siz 'YUKSALISH maktablari'ning murojaatlar botiga yozmoqdasiz! "
+             "Qanday savol, taklif yoki murojaatingiz bo'lsa iltimos yozib qoldiring!"
+    )
+
+    # Filiallarni tugmalar ko'rinishida yaratish
+    keyboard = [
+        [InlineKeyboardButton(f"{branch['name']}", callback_data=branch['name']) for branch in branches[i:i + 3]]
+        for i in range(0, len(branches), 3)
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    # Foydalanuvchiga filial tanlash uchun xabar yuborish
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Quyidagi filiallardan birini tanlang:",
         reply_markup=reply_markup
     )
 
@@ -54,12 +66,17 @@ async def branch_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id not in user_data:
         user_data[user_id] = {}
 
-    branch = query.data
-    user_data[user_id]["branch"] = branch
+    branch_name = query.data
+    branch = next(b for b in branches if b["name"] == branch_name)
+    user_data[user_id]["branch"] = branch_name
 
+    # Filial haqida ma'lumot yuborish
     await context.bot.send_message(
         chat_id=query.message.chat.id,
-        text=f"Tanlangan filial: {branch}\nIltimos, murojaatingizni yozib yuboring."
+        text=f"Tanlangan filial: {branch_name}\n"
+             f"📞 Kontakt: {branch['contact']}\n"
+             f"👤 Admin: {branch['admin']}\n"
+             "Iltimos, murojaatingizni yozib yuboring."
     )
 
 # Foydalanuvchi xabar yuborganida
@@ -74,10 +91,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     branch = user_data[user_id]["branch"]
 
     # Adminlar guruhiga yuborish (admin group ID bilan almashtiring)
-    admin_group_id = -1001234567890
+    admin_group_id = -1001234567890  # Guruh ID sini o'zgartiring
     sent_message = await context.bot.send_message(
         chat_id=admin_group_id,
-        text=f"📥 *Yangi murojaat!*\n\n👤 Foydalanuvchi: {update.effective_user.full_name}\n🏢 Filial: {branch}\n💬 Xabar: {message}",
+        text=f"📥 *Yangi murojaat!*\n\n👤 Foydalanuvchi: {update.effective_user.full_name}\n"
+             f"🏢 Filial: {branch}\n💬 Xabar: {message}",
         parse_mode="Markdown"
     )
 
@@ -107,6 +125,7 @@ async def handle_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
 if __name__ == '__main__':
     app = Application.builder().token(token).build()
 
+    # Handlerlarni qo'shish
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(branch_selected))
     app.add_handler(MessageHandler(filters.TEXT & filters.REPLY, handle_reply))
